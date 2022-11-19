@@ -6,7 +6,7 @@
 
 #define Size 4
 #define Len_Title 30
-#define Capac 250
+#define Capac 100
 
 typedef struct arg
 {
@@ -177,9 +177,6 @@ void *fct(void *arg)
                     for (int putere = 3; putere < args->nr_Reducer + 2; putere++)
                     {
 
-                        int exista_putere = 1;
-
-                        char gasit = 0;
                         double sup = log2(nr) / putere;
                         double inf = floor(sup);
                         sup = ceil(sup);
@@ -199,27 +196,42 @@ void *fct(void *arg)
                         {
                             sup = ceil(pow(2, sup));
                         }
-                        
+                        int start = inf, end = sup;
+                        int gasit = 0;
 
-                        for (int j = inf; j <= sup && gasit == 0 && exista_putere == 1; j++)
+                        while (start <= end && gasit == 0)
                         {
-                            double aux = pow(j, putere);
-                            if (aux == nr)
+                            int middle = (start + end) / 2;
+                            double power = pow(middle, putere);
+                            if (power == nr)
                             {
-                                gasit = 1;
-                                if (args->size_liste_partiale[putere - 2] >= args->capacity_liste_partiale[putere - 2])
-                                {
-                                    args->capacity_liste_partiale[putere - 2] *= 2;
-                                    int *ret = (int *)realloc(args->liste_partiale[putere - 2], args->capacity_liste_partiale[putere - 2] * sizeof(int));
-                                    if (ret != NULL)
-                                    {
-                                        args->liste_partiale[putere - 2] = ret;
-                                    }
-                                }
-
-                                args->liste_partiale[putere - 2][args->size_liste_partiale[putere - 2]++] = nr;
+                                gasit = middle;
+                            }
+                            else if (power < nr)
+                            {
+                                start = middle + 1;
+                            }
+                            else
+                            {
+                                end = middle - 1;
                             }
                         }
+
+                        if (gasit)
+                        {
+                            if (args->size_liste_partiale[putere - 2] >= args->capacity_liste_partiale[putere - 2])
+                            {
+                                args->capacity_liste_partiale[putere - 2] *= 2;
+                                int *ret = (int *)realloc(args->liste_partiale[putere - 2], args->capacity_liste_partiale[putere - 2] * sizeof(int));
+                                if (ret != NULL)
+                                {
+                                    args->liste_partiale[putere - 2] = ret;
+                                }
+                            }
+
+                            args->liste_partiale[putere - 2][args->size_liste_partiale[putere - 2]++] = nr;
+                        }
+                        
                     }
                 }
             }
@@ -233,16 +245,6 @@ void *fct(void *arg)
     }
 
     pthread_barrier_wait(args->bariera);
-
-   /* pthread_mutex_lock(args->mutex);
-    //printf("Thread id: %d\n", args->id_thread);
-    for (int i = 0; i < args->size_liste_partiale[0]; i++)
-    {
-        printf("%d ", args->liste_partiale[0][i]);
-    }
-    printf("\n");
-    pthread_mutex_unlock(args->mutex);
-    */
 
     if (args->reduce != -1)
     {
@@ -264,7 +266,7 @@ void *fct(void *arg)
     strcat(string_fisier, ".txt");
     FILE *fout = fopen(string_fisier, "w");
     fprintf(fout, "%d", args->size_rez);
-
+    fclose(fout);
     pthread_exit(NULL);
 }
 
